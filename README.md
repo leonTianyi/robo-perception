@@ -97,7 +97,11 @@ runtime/tensorrt ───────────► apps/ (run_inference, benc
 
 The seam is the point: every Python backend calls the **same C++** decode +
 pre/post through `roboperc._native`, so swapping the runtime compares *models*, not
-pipelines. Concrete now: `core`, `io/decode`, `runtime/tensorrt`,
+pipelines.
+
+> **Learning the codebase?** [`docs/walkthrough/`](docs/walkthrough/README.md) is a
+> guided tour of this whole slice — system design, a bottom-up code tour, the parity
+> seam, and the end-to-end workflow with the trade-offs explained. Concrete now: `core`, `io/decode`, `runtime/tensorrt`,
 `detection/image/rfdetr`, `bindings`, `apps`, and the full `python/roboperc`
 package (export, eval, experiments). Still stubs: `odometry`, `fusion`,
 `io/streams`, `detection/pointcloud`, `eval/detection`'s mAP scorer.

@@ -1,5 +1,10 @@
 # docs — design notes
 
+> **New here? Start with [`walkthrough/`](walkthrough/README.md)** — a guided tour
+> that teaches the whole system (design + implementation) in reading order: the
+> architecture and the parity seam, a bottom-up C++ code tour, the Python edge, and
+> the build/tools/workflow. The notes below are the original lower-level rationale.
+
 Design rationale for the RF-DETR slice, carried over from the original
 `rfdetr-poc`. The **conceptual** content (why ONNX→TensorRT works the way it does,
 benchmarking methodology, environment gotchas) is unchanged and still authoritative
