@@ -1,0 +1,11 @@
+[project]
+name = "roboperc"
+version = "0.0.0"
+description = "Python edge: PoC models, experiments, auto-annotation, scoring."
+requires-python = ">=3.10"
+
+# Optional per-model deps so importing core never pulls everything in:
+[project.optional-dependencies]
+rfdetr     = []   # transformers/torch pins
+pointcloud = []   # spconv/open3d etc.
+trt        = []   # tensorrt / pycuda
