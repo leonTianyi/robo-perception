@@ -1,0 +1,15 @@
+# Weights manifest — the source of truth for downloadable model weights.
+# Consumed by scripts/download_weights.py (manifest + sha256 verify). Never commit
+# the weights themselves; commit only this manifest.
+#
+# RF-DETR currently self-downloads its checkpoint via the `rfdetr` pip package on
+# first use, so no entry is required yet. Add one here when we host our own or a
+# fine-tuned checkpoint, e.g.:
+#
+# models:
+#   rfdetr_base:
+#     url: https://example.com/rfdetr_base.pth
+#     sha256: <hex>
+#     dest: weights/rfdetr_base.pth
+
+models: {}

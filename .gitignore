@@ -1,0 +1,39 @@
+# ── build ─────────────────────────────────────────────────────────────────────
+build/
+*.o
+*.so
+*.a
+compile_commands.json
+
+# ── artifacts (per README artifact policy: never commit these) ────────────────
+weights/*
+artifacts/*
+data/*
+results/
+*.onnx
+*.engine
+*.npz
+build_manifest.json
+# keep the directory placeholders + manifests
+!weights/.gitkeep
+!weights/README.md
+!weights/models.yaml
+!artifacts/.gitkeep
+!artifacts/README.md
+!data/.gitkeep
+!data/README.md
+
+# ── python ────────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+.ipynb_checkpoints/
+
+# ── editors / os ──────────────────────────────────────────────────────────────
+.vscode/
+.idea/
+.DS_Store

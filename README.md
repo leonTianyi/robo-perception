@@ -4,8 +4,10 @@ A modular monorepo for robotics perception study on a Jetson AGX Orin: 2D/3D
 detection, SLAM, and eventual sensor fusion — built C++-primary for deployment,
 with Python for prototyping, experiments, and auto-annotation.
 
-> This README is the living architecture plan. The repo is intentionally a
-> **skeleton**: most folders are stubs. Let real need pull each one into
+> This README is the living architecture plan. The repo began as a deliberate
+> **skeleton**; the first concrete vertical slice — **RF-DETR image detection** —
+> is now built (see [Implemented](#implemented--rf-detr-detection-slice)). The
+> remaining folders stay stubs on purpose: let real need pull each one into
 > existence rather than populating everything up front.
 
 ## Design decisions
@@ -69,6 +71,66 @@ Each platform/capability dir becomes its own **CMake library target** (with
 `include/ src/ tests/`) when populated, so you can build/test one subsystem in
 isolation. That target-level boundary is what keeps the monorepo from rotting.
 
+> **Where the Python lives.** The platform/capability dirs above (`core`,
+> `runtime/tensorrt`, `detection/image/rfdetr`, `io/decode`, `apps`) are the
+> **C++** deployment tree. All Python — the soft edge — lives in one installable
+> package under `python/roboperc/`, mirroring the same taxonomy internally
+> (`roboperc.runtime`, `roboperc.export`, `roboperc.eval`, `roboperc.detection`,
+> `roboperc.poc`, `roboperc.experiments`). The top-level `export/` and `eval/`
+> dirs are taxonomic homes whose READMEs point at that package; `runtime/`'s
+> PyTorch/ONNX backends live there too (only the TensorRT backend is C++).
+
+## Implemented — RF-DETR detection slice
+
+The first end-to-end capability: RF-DETR run via PyTorch / ONNX Runtime / TensorRT
+(Python) and via a C++ TensorRT deployment path, with shared pre/post, correctness
+checks, and benchmarking. (Migrated and re-architected from the standalone
+`rfdetr-poc`.)
+
+```
+            C++ (canonical, deployment)              Python (edge, experiments)
+io/decode ──────────────┐
+detection/rfdetr pre/post├─► roboperc._native ─► used by ALL python backends
+core types + contract  ──┘   (pybind11)           (pytorch · onnx · tensorrt)
+runtime/tensorrt ───────────► apps/ (run_inference, benchmark)
+```
+
+The seam is the point: every Python backend calls the **same C++** decode +
+pre/post through `roboperc._native`, so swapping the runtime compares *models*, not
+pipelines. Concrete now: `core`, `io/decode`, `runtime/tensorrt`,
+`detection/image/rfdetr`, `bindings`, `apps`, and the full `python/roboperc`
+package (export, eval, experiments). Still stubs: `odometry`, `fusion`,
+`io/streams`, `detection/pointcloud`, `eval/detection`'s mAP scorer.
+
+## Build & run
+
+Prereqs: JetPack 6.2 (CUDA 12.6, TensorRT 10.3), OpenCV 4.8.
+
+```bash
+# 0. one-time Python deps (torch, onnx, rfdetr, cuda-python, pybind11, cmake, ...)
+bash scripts/setup_python.sh
+
+# 1. build C++ libs, apps, and the roboperc._native pybind module
+cmake -S . -B build && cmake --build build -j
+ctest --test-dir build                  # core registry test
+pip install -e .                        # the roboperc package
+
+# 2. lock clocks for stable benchmarks
+sudo nvpmodel -m 0 && sudo jetson_clocks
+
+# 3. PyTorch baseline (also writes the correctness reference)
+python -m roboperc.poc.rfdetr_infer
+
+# 4. export ONNX + build a TensorRT engine (+ build manifest)
+bash scripts/export_and_build.sh fp16
+
+# 5. C++ deployment path
+./build/apps/run_inference "$(ls artifacts/rfdetr__fp16__*.engine | head -1)" data/sample.jpg out.jpg
+
+# 6. full cross-backend comparison + report
+python -m roboperc.experiments.run_pipeline
+```
+
 ## Two paradigms, kept separate
 
 - **Detection** is stateless and per-frame: sample in, `Detections` out.
@@ -97,7 +159,18 @@ differ — that delta is the measurement).
   Build on-device; always record how in `build_manifest.json`. Name to
   self-document, e.g. `rfdetr__fp16__trt10__sm87.engine`.
 
-## Getting started (suggested first slice)
+## What's next (the stubs, in pull order)
 
-Build concrete, stub the rest: `core` + one image detector + `runtime/tensorrt`
-+ `eval/detection` + `bindings`. Stub `odometry`, `fusion`, `io/streams`.
+The first slice is built (see [Implemented](#implemented--rf-detr-detection-slice)).
+Grow the rest only when a real need appears:
+
+- **`eval/detection` mAP** — wire `score_map` once `io/datasets` provides a sample
+  loader; both Python and C++ paths already emit canonical `Detections`.
+- **`io/datasets`** — sample-based loader (shuffleable, independent samples) for
+  detection eval.
+- **a second detector** (e.g. yolo) — proves the registry/contract pays off; just
+  add `detection/image/yolo/` and `REGISTER_DETECTOR`.
+- **`io/streams` + `odometry`** — the SLAM peer (stateful, streaming); give it its
+  own contract in `core`, do **not** force it through `Detector`.
+- **`fusion`** — consumes detection + odometry once both are real.
+- **`apps/ros2`** — thin `rclcpp` wrappers last.

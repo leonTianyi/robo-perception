@@ -4,8 +4,23 @@ version = "0.0.0"
 description = "Python edge: PoC models, experiments, auto-annotation, scoring."
 requires-python = ">=3.10"
 
-# Optional per-model deps so importing core never pulls everything in:
+# Optional per-model / per-backend deps so importing core never pulls everything in.
+# Install with e.g. `pip install -e .[rfdetr,trt]`.
 [project.optional-dependencies]
-rfdetr     = []   # transformers/torch pins
-pointcloud = []   # spconv/open3d etc.
-trt        = []   # tensorrt / pycuda
+rfdetr     = ["rfdetr", "supervision"]      # RF-DETR + viz helpers
+onnx       = ["onnx", "onnxscript", "onnxsim"]
+trt        = ["cuda-python==12.6.2.post1"]  # must match the CUDA 12.6 driver
+eval       = ["pycocotools", "pandas", "tabulate"]
+dev        = ["pybind11"]
+
+# The package lives under python/ (the C++ tree owns the repo root).
+[tool.setuptools.packages.find]
+where = ["python"]
+
+# Ship the compiled pybind module (built by CMake into python/roboperc/) as data.
+[tool.setuptools.package-data]
+roboperc = ["*.so"]
+
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"

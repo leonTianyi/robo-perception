@@ -1,0 +1,27 @@
+# RF-DETR base — experiment config.
+#
+# Read by python/roboperc/experiments (Hydra-ready) and, on-device, by the C++
+# apps (a tiny yaml parse / CLI override). Keep this the single place that selects
+# model + precision + thresholds so the comparison lever stays config-driven.
+
+detector: rfdetr          # registry name (core DetectorRegistry)
+
+model:
+  variant: base           # base | large
+  input_h: 560            # divisible by 14 (ViT patch size)
+  input_w: 560
+  num_queries: 300
+  conf: 0.35
+
+runtime:
+  backend: tensorrt       # pytorch | onnx | tensorrt (the swap lever)
+  precision: fp16         # fp16 | fp32  (tensorrt only)
+
+export:
+  opset: 17
+  simplify: true
+  workspace_gb: 4.0
+
+benchmark:
+  warmup: 200
+  iters: 1000
